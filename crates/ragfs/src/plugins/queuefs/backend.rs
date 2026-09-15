@@ -22,6 +22,8 @@ pub struct Message {
     pub data: Vec<u8>,
     /// Timestamp when the message was enqueued
     pub timestamp: SystemTime,
+    /// Whether `timestamp` came from a real persisted enqueue time.
+    pub timestamp_valid: bool,
 }
 
 impl Message {
@@ -31,6 +33,7 @@ impl Message {
             id: Uuid::new_v4().to_string(),
             data,
             timestamp: SystemTime::now(),
+            timestamp_valid: true,
         }
     }
 }
@@ -64,10 +67,12 @@ impl StoredMessage {
     }
 
     pub(super) fn into_message(self) -> Message {
+        let (timestamp, timestamp_valid) = parse_stored_timestamp(self.timestamp);
         Message {
             id: self.id,
             data: self.data,
-            timestamp: parse_stored_timestamp(self.timestamp),
+            timestamp,
+            timestamp_valid,
         }
     }
 }
@@ -101,23 +106,29 @@ where
     }
 }
 
-fn parse_stored_timestamp(raw: Option<serde_json::Value>) -> SystemTime {
+fn parse_stored_timestamp(raw: Option<serde_json::Value>) -> (SystemTime, bool) {
     match raw {
         Some(serde_json::Value::String(ts)) => DateTime::parse_from_rfc3339(&ts)
             .map(|dt| {
                 let secs = dt.timestamp();
-                let secs_u64 = if secs <= 0 { 0 } else { secs as u64 };
-                UNIX_EPOCH + Duration::from_secs(secs_u64)
+                if secs <= 0 {
+                    (SystemTime::now(), false)
+                } else {
+                    (UNIX_EPOCH + Duration::from_secs(secs as u64), true)
+                }
             })
-            .unwrap_or_else(|_| SystemTime::now()),
+            .unwrap_or_else(|_| (SystemTime::now(), false)),
         Some(serde_json::Value::Number(num)) => num
             .as_i64()
             .map(|secs| {
-                let secs_u64 = if secs <= 0 { 0 } else { secs as u64 };
-                UNIX_EPOCH + Duration::from_secs(secs_u64)
+                if secs <= 0 {
+                    (SystemTime::now(), false)
+                } else {
+                    (UNIX_EPOCH + Duration::from_secs(secs as u64), true)
+                }
             })
-            .unwrap_or_else(SystemTime::now),
-        _ => SystemTime::now(),
+            .unwrap_or_else(|| (SystemTime::now(), false)),
+        _ => (SystemTime::now(), false),
     }
 }
 
@@ -1079,6 +1090,34 @@ mod tests {
 
         let dequeued = backend.dequeue("test").unwrap().unwrap();
         assert_eq!(dequeued.data, payload);
+    }
+
+    #[test]
+    fn test_stored_message_preserves_timestamp_validity() {
+        let missing = StoredMessage {
+            id: "missing".to_string(),
+            data: b"payload".to_vec(),
+            timestamp: None,
+        }
+        .into_message();
+        assert!(!missing.timestamp_valid);
+
+        let invalid = StoredMessage {
+            id: "invalid".to_string(),
+            data: b"payload".to_vec(),
+            timestamp: Some(serde_json::Value::String("not-a-time".to_string())),
+        }
+        .into_message();
+        assert!(!invalid.timestamp_valid);
+
+        let valid = StoredMessage {
+            id: "valid".to_string(),
+            data: b"payload".to_vec(),
+            timestamp: Some(serde_json::Value::Number(1234.into())),
+        }
+        .into_message();
+        assert!(valid.timestamp_valid);
+        assert_eq!(unix_secs(valid.timestamp), 1234);
     }
 
     #[test]
