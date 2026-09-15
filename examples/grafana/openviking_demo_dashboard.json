@@ -4577,220 +4577,6 @@
       "fieldConfig": {
         "defaults": {
           "color": {
-            "fixedColor": "#00FFE5",
-            "mode": "fixed"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 22,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 3,
-            "pointSize": 3,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#F2495C",
-                "value": 0
-              },
-              {
-                "color": "#FF9830",
-                "value": 0.5
-              },
-              {
-                "color": "#73BF69",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 0,
-        "y": 156
-      },
-      "id": 1001,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "12.4.1",
-      "targets": [
-        {
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by (le, queue, outcome) (rate(openviking_queue_process_duration_seconds_bucket[$__rate_interval])))",
-          "legendFormat": "P95 {{queue}} / {{outcome}}",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by (le, queue, outcome) (rate(openviking_queue_process_duration_seconds_bucket[$__rate_interval])))",
-          "legendFormat": "P99 {{queue}} / {{outcome}}",
-          "range": true,
-          "refId": "B"
-        }
-      ],
-      "title": "Queue Processing Duration",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
-            "fixedColor": "#00FFE5",
-            "mode": "fixed"
-          },
-          "custom": {
-            "axisBorderShow": false,
-            "axisCenteredZero": false,
-            "axisColorMode": "text",
-            "axisLabel": "",
-            "axisPlacement": "auto",
-            "barAlignment": 0,
-            "barWidthFactor": 0.6,
-            "drawStyle": "line",
-            "fillOpacity": 22,
-            "gradientMode": "opacity",
-            "hideFrom": {
-              "legend": false,
-              "tooltip": false,
-              "viz": false
-            },
-            "insertNulls": false,
-            "lineInterpolation": "smooth",
-            "lineWidth": 3,
-            "pointSize": 3,
-            "scaleDistribution": {
-              "type": "linear"
-            },
-            "showPoints": "never",
-            "showValues": false,
-            "spanNulls": false,
-            "stacking": {
-              "group": "A",
-              "mode": "none"
-            },
-            "thresholdsStyle": {
-              "mode": "off"
-            }
-          },
-          "mappings": [],
-          "thresholds": {
-            "mode": "absolute",
-            "steps": [
-              {
-                "color": "#F2495C",
-                "value": 0
-              },
-              {
-                "color": "#FF9830",
-                "value": 0.5
-              },
-              {
-                "color": "#73BF69",
-                "value": 1
-              }
-            ]
-          },
-          "unit": "s"
-        },
-        "overrides": []
-      },
-      "gridPos": {
-        "h": 8,
-        "w": 12,
-        "x": 12,
-        "y": 156
-      },
-      "id": 1002,
-      "options": {
-        "legend": {
-          "calcs": [],
-          "displayMode": "table",
-          "placement": "bottom",
-          "showLegend": true
-        },
-        "tooltip": {
-          "hideZeros": false,
-          "mode": "multi",
-          "sort": "desc"
-        }
-      },
-      "pluginVersion": "12.4.1",
-      "targets": [
-        {
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.95, sum by (le, queue, outcome) (rate(openviking_queue_end_to_end_duration_seconds_bucket[$__rate_interval])))",
-          "legendFormat": "P95 {{queue}} / {{outcome}}",
-          "range": true,
-          "refId": "A"
-        },
-        {
-          "editorMode": "code",
-          "expr": "histogram_quantile(0.99, sum by (le, queue, outcome) (rate(openviking_queue_end_to_end_duration_seconds_bucket[$__rate_interval])))",
-          "legendFormat": "P99 {{queue}} / {{outcome}}",
-          "range": true,
-          "refId": "B"
-        }
-      ],
-      "title": "Queue End-to-End Duration",
-      "type": "timeseries"
-    },
-    {
-      "datasource": {
-        "type": "prometheus",
-        "uid": "${DS_PROMETHEUS}"
-      },
-      "fieldConfig": {
-        "defaults": {
-          "color": {
             "mode": "thresholds"
           },
           "mappings": [],
@@ -4824,7 +4610,7 @@
         "h": 6,
         "w": 24,
         "x": 0,
-        "y": 164
+        "y": 156
       },
       "id": 52,
       "options": {
@@ -4877,7 +4663,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 170
+        "y": 162
       },
       "id": 53,
       "panels": [],
@@ -4920,7 +4706,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 171
+        "y": 163
       },
       "id": 54,
       "options": {
@@ -4980,7 +4766,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 179
+        "y": 171
       },
       "id": 55,
       "panels": [],
@@ -5024,7 +4810,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 180
+        "y": 172
       },
       "id": 56,
       "options": {
@@ -5115,7 +4901,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 188
+        "y": 180
       },
       "id": 57,
       "options": {
@@ -5213,7 +4999,7 @@
         "h": 8,
         "w": 24,
         "x": 0,
-        "y": 196
+        "y": 188
       },
       "id": 58,
       "options": {
@@ -5266,7 +5052,7 @@
         "h": 1,
         "w": 24,
         "x": 0,
-        "y": 204
+        "y": 196
       },
       "id": 59,
       "panels": [],
@@ -5301,7 +5087,7 @@
         "h": 8,
         "w": 12,
         "x": 0,
-        "y": 205
+        "y": 197
       },
       "id": 60,
       "options": {
@@ -5357,7 +5143,7 @@
         "h": 8,
         "w": 12,
         "x": 12,
-        "y": 205
+        "y": 197
       },
       "id": 61,
       "options": {
@@ -5451,6 +5237,6 @@
   "timezone": "browser",
   "title": "Openviking-Demo",
   "uid": "openviking-demo",
-  "version": 40,
+  "version": 39,
   "weekStart": ""
 }
