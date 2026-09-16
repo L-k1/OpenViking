@@ -26,4 +26,4 @@ async def test_queuefs_dequeue_exposes_original_enqueue_timestamp(tmp_path):
     assert message is not None
     assert message["id"]
     assert message["data"] == '{"value": 1}'
-    assert before - 1.0 <= float(message["timestamp"]) <= time.time()
+    assert before <= float(message["timestamp"]) <= time.time()
