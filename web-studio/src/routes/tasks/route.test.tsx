@@ -305,3 +305,18 @@ describe('session commit re-trigger feedback', () => {
     expect(toast.success).not.toHaveBeenCalled()
   })
 })
+
+
+it('shows measured processing and waiting time without inventing legacy timing', async () => {
+  records = [
+    { task_id: 'measured', status: 'completed', task_type: 'add_resource', created_at: 100, updated_at: 700, processing_seconds: 61 },
+    { task_id: 'legacy', status: 'completed', task_type: 'add_resource', created_at: 100, updated_at: 700 },
+  ]
+  await renderPage()
+  const measured = await screen.findByRole('row', { name: 'View details for task measured' })
+  expect(within(measured).getByText('1m 1s')).toBeDefined()
+  expect(within(measured).getByText('Waiting Time: 8m 59s')).toBeDefined()
+  expect(within(measured).getByText('10m')).toBeDefined()
+  const legacy = screen.getByRole('row', { name: 'View details for task legacy' })
+  expect(within(legacy).getByText('Not recorded')).toBeDefined()
+})

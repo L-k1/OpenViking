@@ -51,7 +51,13 @@ import { QueueStatusCard } from '#/routes/monitoring/-components/queue-status-ca
 import { TaskDetailSheet } from '#/routes/tasks/-components/task-detail-sheet'
 import { normalizeTaskStatus } from '#/routes/tasks/-lib/task-record'
 import type { TaskRecord } from '#/routes/tasks/-lib/task-record'
-import { formatTaskDuration, getTaskDate } from '#/routes/tasks/-lib/task-time'
+import {
+  formatTaskDuration,
+  formatTaskProcessingDuration,
+  formatTaskWaitingDuration,
+  getAverageTaskDurationSeconds,
+  getTaskDate,
+} from '#/routes/tasks/-lib/task-time'
 import { fetchTasks, MAX_TASKS } from './-lib/task-list'
 import { localizeSkippedCommit } from './-lib/localize-commit-result'
 import type { TaskStatusFilter, TaskTypeFilter } from './-lib/task-list'
@@ -494,18 +500,7 @@ function TasksRoute() {
 
     const successRate = total > 0 ? (completed / total) * 100 : 100
 
-    const durations = allTasks
-      .map((item) => {
-        const start = Number(item.created_at || 0)
-        const end = Number(item.updated_at || start)
-        return start > 0 && end >= start ? end - start : null
-      })
-      .filter((d): d is number => d !== null && d >= 0)
-
-    const avgDurationSec =
-      durations.length > 0
-        ? durations.reduce((a, b) => a + b, 0) / durations.length
-        : 0
+    const avgDurationSec = getAverageTaskDurationSeconds(allTasks)
 
     const ALL_TASK_TYPES = [
       'add_resource',
@@ -645,9 +640,11 @@ function TasksRoute() {
           </div>
           <div className="flex items-baseline gap-1">
             <span className="font-mono text-xl font-bold tabular-nums text-foreground">
-              {kpiData.avgDurationSec < 1
-                ? `${(kpiData.avgDurationSec * 1000).toFixed(0)}ms`
-                : `${kpiData.avgDurationSec.toFixed(1)}s`}
+              {kpiData.avgDurationSec === undefined
+                ? '-'
+                : kpiData.avgDurationSec < 1
+                  ? `${(kpiData.avgDurationSec * 1000).toFixed(0)}ms`
+                  : `${kpiData.avgDurationSec.toFixed(1)}s`}
             </span>
           </div>
           <p className="text-[11px] text-muted-foreground truncate">
@@ -842,6 +839,7 @@ function TasksRoute() {
                   <TableHead>{t('table.resource')}</TableHead>
                   <TableHead>{t('labels.queuePipeline')}</TableHead>
                   <TableHead>{t('table.status')}</TableHead>
+                  <TableHead title={t('labels.processingDurationHelp')}>{t('labels.processingDuration')}</TableHead>
                   <TableHead>{t('labels.duration')}</TableHead>
                   <TableHead className="text-right">
                     {t('table.createdAt')}
@@ -909,6 +907,12 @@ function TasksRoute() {
                       </TableCell>
                       <TableCell>{renderQueuePipeline(task)}</TableCell>
                       <TableCell>{renderStatus(task)}</TableCell>
+                      <TableCell className="whitespace-nowrap text-xs tabular-nums">
+                        <div>{formatTaskProcessingDuration(task) ?? t('labels.timingUnavailable')}</div>
+                        <div className="text-muted-foreground">
+                          {t('labels.waitingDuration')}: {formatTaskWaitingDuration(task) ?? '-'}
+                        </div>
+                      </TableCell>
                       <TableCell className="whitespace-nowrap font-mono text-xs text-muted-foreground">
                         {formatTaskDuration(task)}
                       </TableCell>
