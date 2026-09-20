@@ -53,7 +53,8 @@ Le dépôt est cloné dans `C:\Projets\OpenViking` (remote `origin` = fork L-k1,
 | Réseau | Bind `[1] Local 127.0.0.1`, port `1933` | serveur joignable uniquement depuis ce PC (pas d'auth) |
 | Diagnostic | `openviking-server.exe doctor` | 1er passage : `Embedding FAIL (probe timed out)` → 2e passage : **All checks passed** |
 | Serveur | `openviking-server.exe` | `OpenViking HTTP Server is running on 127.0.0.1:1933`, tracer désactivé |
-| CLI | `ov.exe status` → langue `English` → `ov.exe config` → Add Config → Local | en cours |
+| CLI | `ov.exe status` → langue `English` → `ov.exe config` → Add Config → Custom → nom `local` → URL défaut → No key → Account `default` | config `local` active, `ov status` : **Connected (Healthy)** |
+| Test fonctionnel | `ov add-resource C:\Projets\OpenViking\docs\en` → `ov find "what is openviking"` | ressource `viking://resources/en` indexée, 9 résultats L0/L1/L2 — **installation validée** |
 
 ### Astuce : `Embedding FAIL (probe timed out)`
 
