@@ -45,29 +45,71 @@ jamais au-delà de `localhost` sans configurer l'authentification (voir `docs/`)
 
 Le dépôt est cloné dans `C:\Projets\OpenViking` (remote `origin` = fork L-k1, `upstream` = volcengine).
 
-## Premier démarrage (à faire par Lüdi)
+## Journal du premier démarrage (2026-09-20)
+
+| Étape | Commande (PowerShell, invite `PS C:\…>`) | Résultat |
+|---|---|---|
+| Assistant de config | `openviking-server.exe init` → mode `[2]` tout-Ollama | modèles téléchargés : `qwen3-embedding:0.6b` (embedding) + `qwen3.5:4b` (VLM), ~5 Go |
+| Réseau | Bind `[1] Local 127.0.0.1`, port `1933` | serveur joignable uniquement depuis ce PC (pas d'auth) |
+| Diagnostic | `openviking-server.exe doctor` | 1er passage : `Embedding FAIL (probe timed out)` → 2e passage : **All checks passed** |
+| Serveur | `openviking-server.exe` | `OpenViking HTTP Server is running on 127.0.0.1:1933`, tracer désactivé |
+| CLI | `ov.exe status` → langue `English` → `ov.exe config` → Add Config → Local | en cours |
+
+### Astuce : `Embedding FAIL (probe timed out)`
+
+Ce n'est pas une panne : sur 8 Go de RAM, le premier chargement du modèle d'embedding dans
+Ollama dépasse le délai du test. Il suffit de « préchauffer » le modèle puis de relancer `doctor` :
 
 ```powershell
-# 1. Assistant de configuration : choisir le provider d'embedding + VLM
-#    (recommandé pour rester 100 % local : Ollama ; sinon OpenAI / OpenRouter avec ta clé)
-& "C:\Users\Ludi\anaconda3\Scripts\openviking-server.exe" init
-
-# 2. Vérifier la config et la connectivité
+Invoke-RestMethod -Method Post -Uri http://localhost:11434/api/embed -ContentType 'application/json' -Body '{"model":"qwen3-embedding:0.6b","input":"test"}' | Select-Object model, load_duration
 & "C:\Users\Ludi\anaconda3\Scripts\openviking-server.exe" doctor
-
-# 3. Démarrer le serveur (port 1933 par défaut)
-& "C:\Users\Ludi\anaconda3\Scripts\openviking-server.exe"
 ```
 
-Dans un second terminal :
+Les messages `WARNING … slow call … duration_ms=3000` sont normaux en local (≈ 3 s par embedding).
+
+### Config du CLI `ov`
+
+Le CLI a sa propre config (`C:\Users\Ludi\.openviking\ovcli.conf`, hors dépôt) :
+`ov config` → **Add Config** → **Local** (pas « OpenViking Service », qui est l'offre cloud payante)
+→ URL `http://127.0.0.1:1933` → API key vide → nom libre (ex. `local`).
+
+### Test fonctionnel (Terminal 2, serveur lancé dans le Terminal 1)
 
 ```powershell
 & "C:\Users\Ludi\anaconda3\Scripts\ov.exe" status
 & "C:\Users\Ludi\anaconda3\Scripts\ov.exe" add-resource C:\Projets\OpenViking\docs\en
+& "C:\Users\Ludi\anaconda3\Scripts\ov.exe" task status TASK_ID      # répéter jusqu'à completed
+& "C:\Users\Ludi\anaconda3\Scripts\ov.exe" ls viking://resources/
 & "C:\Users\Ludi\anaconda3\Scripts\ov.exe" find "what is openviking"
 ```
 
-La configuration est écrite dans `~/.openviking/ov.conf` (`C:\Users\Ludi\.openviking\`).
+## Ce que l'outil apporte, en l'état
+
+1. **Mémoire de projets entre sessions** : importer `C:\Projets\<projet>` une fois, puis `ov find`
+   ramène les fichiers pertinents au lieu de relire tout le projet (moins de tokens).
+2. **Apprentissage des préférences** via le plugin Claude Code (hooks + MCP) : chaque session est
+   « commitée », les enseignements sont réinjectés dans les suivantes — remplace `claude-mem`.
+3. **Base de connaissances / RAG local** : PDF, cours, docs, pages web interrogeables en langage naturel.
+4. **Skills réutilisables** dans `viking://user/<id>/skills/`.
+5. **Web Studio** pour parcourir le contexte.
+
+Limite : avec 8 Go de RAM et les modèles Ollama, indexation lente ; pour un usage intensif,
+brancher le VLM sur une API cloud (mode mixte de `init`).
+
+## Licence et usage commercial (analyse du 2026-09-20 — pas un avis juridique)
+
+Licence **AGPL-3.0 pure** (aucune clause additionnelle dans le dépôt).
+
+| Autorisé | Obligatoire |
+|---|---|
+| Usage commercial, accès payant | Publier le code source complet de la version modifiée à tout utilisateur du service réseau (art. 13) |
+| Renommer le produit, propre domaine/logo | Rester sous AGPL (pas de version propriétaire dérivée) |
+| Modifier / étendre le code | Conserver les mentions de copyright ByteDance ; ne pas utiliser les marques OpenViking / VikingBot |
+| Héberger sur Alibaba Cloud (Docker fourni) | Activer l'authentification (mode Remote + clés API), isolation par utilisateur, HTTPS, conformité RGPD |
+
+Modèle économique viable : vendre l'**hébergement**, le **support**, les **intégrations** et les
+services annexes — pas le secret du code. ByteDance vend déjà l'équivalent (« OpenViking Service »).
+À faire valider par un avocat spécialisé avant tout lancement.
 
 ## Intégration Claude Code (plus tard)
 
