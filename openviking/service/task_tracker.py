@@ -30,6 +30,7 @@ from openviking.service.task_events import (
     TaskEventHistory,
     append_task_event,
 )
+from openviking.service.task_processing_time import pause_task_processing
 from openviking.service.task_store import TaskStore
 from openviking.service.task_tracker_concurrency import (
     KeyedAsyncLockPool,
@@ -876,7 +877,7 @@ class TaskTracker:
                     account_id=task.account_id,
                     user_id=task.user_id,
                 )
-        with self._work_index.pause_processing(task_id):
+        with pause_task_processing():
             while self._work_index.has_work(task_id, exclude_work_id=current_work_id):
                 await asyncio.sleep(0.05)
 

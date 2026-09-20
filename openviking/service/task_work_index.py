@@ -18,7 +18,7 @@ from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Dict, Iterable, Iterator, Mapping, Optional
 from uuid import uuid4
 
-from openviking.service.task_processing_time import ProcessingClock
+from openviking.service.task_processing_time import ProcessingClock, processing_owner
 
 TASK_WORK_ID_FIELD = "_task_work_id"
 
@@ -310,8 +310,8 @@ class TaskWorkIndex:
             self._processing.pop(task_id, None)
 
     @contextmanager
-    def pause_processing(self, task_id: str) -> Iterator[None]:
-        worker = asyncio.current_task()
+    def pause_processing(self, task_id: str, *, worker: Any = None) -> Iterator[None]:
+        worker = worker if worker is not None else asyncio.current_task()
         with self._lock:
             clock = self._processing.get(task_id)
             was_processing = clock is not None and worker in clock.workers
@@ -321,8 +321,26 @@ class TaskWorkIndex:
             yield
         finally:
             with self._lock:
-                if was_processing and worker in self._active.get(task_id, ()):
+                if was_processing and self._processing.get(task_id) is clock:
                     clock.enter(worker)
+
+    @contextmanager
+    def measure_processing(self, task_id: str) -> Iterator[None]:
+        # Timing ownership is separate from cancellation ownership: a shared DAG
+        # worker must never become cancellable on behalf of one queued task.
+        worker = object()
+        token = processing_owner.set((self, task_id, worker))
+        with self._lock:
+            clock = self._processing.get(task_id)
+            if clock is not None:
+                clock.enter(worker)
+        try:
+            yield
+        finally:
+            with self._lock:
+                if clock is not None:
+                    clock.leave(worker)
+            processing_owner.reset(token)
 
     def register_active(
         self,
@@ -336,10 +354,13 @@ class TaskWorkIndex:
                 clock = self._processing.get(task_id)
                 if clock is not None:
                     clock.enter(active_task)
+                processing_owner.set((self, task_id, active_task))
         if cancelled:
             active_task.get_loop().call_soon(active_task.cancel)
 
     def unregister_active(self, task_id: str, active_task: asyncio.Task[Any]) -> None:
+        if processing_owner.get() == (self, task_id, active_task):
+            processing_owner.set(None)
         with self._lock:
             clock = self._processing.get(task_id)
             if clock is not None:

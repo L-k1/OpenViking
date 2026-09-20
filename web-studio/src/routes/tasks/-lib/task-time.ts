@@ -1,3 +1,5 @@
+import { isActiveTaskStatus } from './task-record'
+
 export type TaskTimestamp = {
   processing_seconds?: number | null
   created_at?: number | string
@@ -32,7 +34,6 @@ export function getTaskDate(task: TaskTimestamp): Date | undefined {
 }
 
 const terminalStatuses = new Set(['completed', 'failed', 'cancelled'])
-const activeStatuses = new Set(['pending', 'running', 'cancelling'])
 
 /** Wall-clock time since submission, including queue waits between stages. */
 export function getTaskDurationSeconds(
@@ -47,7 +48,7 @@ export function getTaskDurationSeconds(
   if (!start) return undefined
 
   let endMs: number | undefined
-  if (activeStatuses.has(task.status ?? '')) {
+  if (isActiveTaskStatus(task.status)) {
     endMs = nowMs
   } else if (terminalStatuses.has(task.status ?? '')) {
     endMs = getTaskDate({

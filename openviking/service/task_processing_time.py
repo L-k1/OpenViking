@@ -7,8 +7,29 @@ leave active tasks unmeasured rather than inventing time across the downtime.
 """
 
 import time
+from contextlib import contextmanager
+from contextvars import ContextVar
 from dataclasses import dataclass, field
-from typing import Any
+from typing import TYPE_CHECKING, Any, Iterator
+
+if TYPE_CHECKING:
+    from openviking.service.task_work_index import TaskWorkIndex
+
+# Inherited by shielded child coroutines; DAG nodes install their own owner.
+processing_owner: ContextVar[tuple["TaskWorkIndex", str, Any] | None] = ContextVar(
+    "processing_owner", default=None
+)
+
+
+@contextmanager
+def pause_task_processing() -> Iterator[None]:
+    owner = processing_owner.get()
+    if owner is None:
+        yield
+    else:
+        index, task_id, worker = owner
+        with index.pause_processing(task_id, worker=worker):
+            yield
 
 
 @dataclass
